@@ -42,11 +42,13 @@ bool CanvasWidget::Canvas::mouseDragEvent(const Eigen::Vector2i &p, const Eigen:
 	return true;
 }
 
+
 bool CanvasWidget::Canvas::scrollEvent(const Eigen::Vector2i &p, const Eigen::Vector2f &rel)
 {
 	viewer.SetRadius((1.f - 0.1f * rel.y())*viewer.radius);
 	return true;
 }
+
 
 CanvasWidget::CanvasHelper::CanvasHelper(Canvas* _canvas)
 	:Widget(_canvas->parent())
@@ -253,4 +255,15 @@ bool CanvasWidget::mouseButtonEvent(const Eigen::Vector2i &p, int button, bool d
 		this->screen()->performLayout();
 	}
 	return nanogui::Widget::mouseButtonEvent(p,button, down, modifiers);
+}
+
+
+cv::Mat CanvasWidget::GetImage()
+{
+	this->screen()->drawAll();
+	glfwSwapBuffers(this->screen()->glfwWindow());
+	cv::Mat image(canvas->height(), canvas->width(), CV_8UC3);
+	glReadPixels(0, 0, canvas->width(), canvas->height(), GL_BGR, GL_UNSIGNED_BYTE, image.data);
+	cv::flip(image, image, 0);
+	return image;
 }
