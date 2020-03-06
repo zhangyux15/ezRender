@@ -31,4 +31,5 @@ struct CanvasWidget : public nanogui::Widget
 
 	CanvasWidget(nanogui::Widget* parent, const Eigen::Vector2i& size);
 	virtual bool mouseButtonEvent(const Eigen::Vector2i &p, int button, bool down, int modifiers) override;
+	cv::Mat GetImage();
 };

@@ -31,6 +31,7 @@ struct ExampleApplication: public nanogui::Screen
 int main() {
 	nanogui::init();
 	nanogui::ref<ExampleApplication> app(new ExampleApplication());
+	app->setVisible(true);
 	CanvasWidget* canvasWidget = new CanvasWidget(app, { 900, 900 });
 	app->performLayout();
 
@@ -38,11 +39,9 @@ int main() {
 	model.Drive(Eigen::Vector3f::Constant(0.1f), Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero());
 	std::shared_ptr<GLUtil::VAO> vao = std::make_shared<GLUtil::VAO>();
 	vao->UploadModel(model);
-	vao->UploadTex(cv::imread("../data/texture/water.jpg"));
+	vao->UploadTex(cv::imread("../data/texture/wood.png"));
 	canvasWidget->canvas->vaos.emplace_back(vao);
 
-	app->drawAll();
-	app->setVisible(true);
 	nanogui::mainloop();
 	nanogui::shutdown();
 	return 0;
