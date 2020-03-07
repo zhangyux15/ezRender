@@ -15,7 +15,7 @@ struct Camera
 	cv::Matx<float, 5, 1> cvDistCoeff = cv::Matx<float,5,1>::zeros();
 	cv::Size cvImgSize, cvNewImgSize = cv::Size(0, 0);
 	cv::Rect cvValidPixROI = cv::Rect(0, 0, 0, 0);
-	double cvRectifyAlpha = 0;
+	double cvRectifyAlpha = 1;
 	cv::Mat cvRectifyMapX, cvRectifyMapY;
 
 	// normalized
