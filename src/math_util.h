@@ -122,8 +122,5 @@ namespace MathUtil {
 		else
 			return std::abs((pA - pB).dot((rayA.cross(rayB)).normalized()));
 	}
-
-	// others
-	inline int LayGrid(const int& x, const int& dim) { return (x + dim - 1) / dim; }
 }
 
