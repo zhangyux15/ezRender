@@ -12,18 +12,14 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <Eigen/Core>
+#include <cuda_gl_interop.h>
 #include <opencv2/core.hpp>
+#include <opencv2/core/cuda.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include "math_util.h"
-
-// #define CUDA_INTEROP
-#ifdef CUDA_INTEROP
 #include "cuda_util.h"
-#include <opencv2/core/cuda.hpp>
-#include <cuda_gl_interop.h>
-#endif
 
 
 namespace GLUtil
@@ -49,7 +45,6 @@ namespace GLUtil
 			std::abort();
 		}
 	}
-
 
 	enum ShaderType
 	{
@@ -285,32 +280,24 @@ namespace GLUtil
 	struct PBO
 	{
 		unsigned int id;
-		Eigen::Vector2i size;
+		cv::Size size;
 		size_t bytes = 0;
-
-#ifdef CUDA_INTEROP
 		cudaGraphicsResource_t buffer = nullptr;
-#endif
 
-		PBO(const Eigen::Vector2i& _size)
+		PBO(const cv::Size& _size)
 		{
 			size = _size;
-			bytes = sizeof(unsigned char) * size.x() * size.y() * 3;
+			bytes = sizeof(unsigned char) * size.width * size.height * 3;
 			glGenBuffers(1, &id);
 			Bind();
 			glBufferData(GL_PIXEL_UNPACK_BUFFER, bytes, NULL, GL_DYNAMIC_COPY);
 			Unbind();
-
-#ifdef CUDA_INTEROP
 			CudaUtil::Check(cudaGraphicsGLRegisterBuffer(&buffer, id, cudaGraphicsMapFlagsNone));
-#endif
 		}
 
 		~PBO()
 		{
-#ifdef CUDA_INTEROP
 			cudaGraphicsUnregisterResource(buffer);
-#endif
 			glDeleteBuffers(1, &id);
 		}
 
@@ -319,7 +306,6 @@ namespace GLUtil
 		void Bind() { glBindBuffer(GL_PIXEL_UNPACK_BUFFER, id); }
 		void Unbind() { glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0); }
 
-#ifdef CUDA_INTEROP
 		void Map(unsigned char** data, cudaStream_t stream)
 		{
 			size_t size;
@@ -328,21 +314,16 @@ namespace GLUtil
 		}
 
 		void Unmap(cudaStream_t stream) { CudaUtil::Check(cudaGraphicsUnmapResources(1, &buffer, stream)); }
-#endif
-
 	};
 
 
 	struct Tex
 	{
 		unsigned int id;
-		Eigen::Vector2i size;
-
-#ifdef CUDA_INTEROP
+		cv::Size size;
 		cudaGraphicsResource_t buffer = nullptr;
-#endif
 
-		Tex(const Eigen::Vector2i& _size)
+		Tex(const cv::Size& _size)
 		{
 			size = _size;
 			glGenTextures(1, &id);
@@ -351,17 +332,13 @@ namespace GLUtil
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x(), size.y(), 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-#ifdef CUDA_INTEROP
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.width, size.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 			CudaUtil::Check(cudaGraphicsGLRegisterImage(&buffer, id, GL_TEXTURE_2D, cudaGraphicsMapFlagsNone));
-#endif
 		}
 
 		~Tex()
 		{
-#ifdef CUDA_INTEROP
 			cudaGraphicsUnregisterResource(buffer);
-#endif
 			glDeleteTextures(1, &id);
 		}
 
@@ -372,39 +349,33 @@ namespace GLUtil
 		void Upload(const unsigned char* const data, const unsigned int& format)
 		{
 			Bind();
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size.x(), size.y(), format, GL_UNSIGNED_BYTE, data);
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size.width, size.height, format, GL_UNSIGNED_BYTE, data);
 		}
 
 		void Upload(PBO& pbo, const unsigned int& format)
 		{
 			pbo.Bind();
 			Bind();
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size.x(), size.y(), format, GL_UNSIGNED_BYTE, NULL);
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size.width, size.height, format, GL_UNSIGNED_BYTE, NULL);
 			pbo.Unbind();
 		}
 
 		void Clear()
 		{
-			Bind();
-			std::vector<unsigned char> tmp(3 * size.x()*size.y(), 0);
+			std::vector<unsigned char> tmp(3 * size.width*size.height, 0);
 			Upload(tmp.data(), GL_RGB);
 		}
 
-#ifdef CUDA_INTEROP
-		void Upload(const cv::Mat& mat, cudaStream_t stream)
+		void Upload(const cv::Mat& mat, const unsigned int& format)
 		{
-			assert(mat.type() == CV_8UC4 && size == Eigen::Vector2i(mat.cols, mat.rows));
-
-			cudaArray_t data_t;
-			Map(&data_t, stream);
-			CudaUtil::Check(cudaMemcpy2DToArrayAsync(data_t, 0, 0, mat.data, mat.step, mat.cols * mat.elemSize(), mat.rows, cudaMemcpyHostToDevice, stream));
-			Unmap(stream);
+			assert(size.width == mat.cols && size.height == mat.rows);
+			Upload(mat.data, format);
 		}
 
 		void Upload(const cv::cuda::GpuMat& mat, cudaStream_t stream)
 		{
 			// only support 4 channel
-			assert(mat.type() == CV_8UC4 && size == Eigen::Vector2i(mat.cols, mat.rows));
+			assert(mat.type() == CV_8UC4 && size.width == mat.cols&&size.height == mat.rows);
 
 			cudaArray_t data_t;
 			Map(&data_t, stream);
@@ -419,8 +390,6 @@ namespace GLUtil
 		}
 
 		void Unmap(cudaStream_t stream) { CudaUtil::Check(cudaGraphicsUnmapResources(1, &buffer, stream)); }
-#endif
-
 	};
 
 
@@ -428,14 +397,14 @@ namespace GLUtil
 	{
 		unsigned int id;
 		unsigned int type;
-		Eigen::Vector2i size;
+		cv::Size size;
 
-		RBO(const unsigned int& _type, const Eigen::Vector2i& _size) {
+		RBO(const unsigned int& _type, const cv::Size& _size) {
 			type = _type;
 			size = _size;
 			glGenRenderbuffers(1, &id);
 			Bind();
-			glRenderbufferStorage(GL_RENDERBUFFER, type, size.x(), size.y());
+			glRenderbufferStorage(GL_RENDERBUFFER, type, size.width, size.height);
 			Unbind();
 		}
 
@@ -451,10 +420,10 @@ namespace GLUtil
 	struct FBO
 	{
 		unsigned int id;
-		Eigen::Vector2i size;
+		cv::Size size;
 		RBO colorRBO, depthRBO;
 
-		FBO(const Eigen::Vector2i& _size)
+		FBO(const cv::Size& _size)
 			: colorRBO(GL_RGBA8, _size), depthRBO(GL_DEPTH24_STENCIL8, _size) {
 			size = _size;
 			glGenFramebuffers(1, &id);
@@ -694,28 +663,21 @@ namespace GLUtil
 			ebo->Upload(data);
 		}
 
-#ifdef CUDA_INTEROP
-		void UploadTex(const cv::Mat& img, cudaStream_t stream = NULL)
+		void UploadTex(const cv::Mat& img, const unsigned int& format)
 		{
-			if (!texuv || texuv->size.x() != img.cols || texuv->size.y() != img.cols)
-				texuv = std::make_shared<Tex>(Eigen::Vector2i(img.cols, img.rows));
-			texuv->Upload(img, stream);
+			cv::Size _size(img.cols, img.rows);
+			if (!texuv || texuv->size != _size)
+				texuv = std::make_shared<Tex>(_size);
+			texuv->Upload(img, format);
 		}
 
 		void UploadTex(const cv::cuda::GpuMat& img, cudaStream_t stream = NULL)
 		{
-			if (!texuv || texuv->size.x() != img.cols || texuv->size.y() != img.cols)
-				texuv = std::make_shared<Tex>(Eigen::Vector2i(img.cols, img.rows));
+			cv::Size _size(img.cols, img.rows);
+			if (!texuv || texuv->size != _size)
+				texuv = std::make_shared<Tex>(_size);
 			texuv->Upload(img, stream);
 		}
-#else
-		void UploadTex(const cv::Mat& img)
-		{
-			if (!texuv || texuv->size.x() != img.cols || texuv->size.y() != img.cols)
-				texuv = std::make_shared<Tex>(Eigen::Vector2i(img.cols, img.rows));
-			texuv->Upload(img.data, GL_BGR);
-		}
-#endif
 
 		void UploadModel(const Model& model) {
 			UploadVBO<float>(ATTRIB_VERTEX, model.vertices);
@@ -799,12 +761,12 @@ namespace GLUtil
 		void SetCenter(const Eigen::Vector3f& _center) { LookAt(eye, _center, up); }
 		void SetUp(const Eigen::Vector3f& _up) { LookAt(eye, center, _up); }
 		void SetRadius(const float& _radius) { SetEye(center - front * _radius); }
-		void SetCam(const Eigen::Vector2i& imgSize, const Eigen::Matrix3f& K, const Eigen::Matrix3f& R, const Eigen::Vector3f& T) {
-			aspect = float(imgSize.x()) / float(imgSize.y());
-			fov = 2 * std::atan(0.5f * float(imgSize.x()) / K(1, 1));
+		void SetCam(const cv::Size& imgSize, const Eigen::Matrix3f& K, const Eigen::Matrix3f& R, const Eigen::Vector3f& T) {
+			aspect = float(imgSize.width) / float(imgSize.height);
+			fov = 2 * std::atan(0.5f * float(imgSize.width) / K(1, 1));
 			Perspective(fov, aspect, nearest, farthest);
-			perspective(0, 2) = (1.f - 2.f*K(0, 2) / float(imgSize.x())) / aspect;
-			perspective(1, 2) = 2.f*K(1, 2) / float(imgSize.y()) - 1.f;
+			perspective(0, 2) = (1.f - 2.f*K(0, 2) / float(imgSize.width)) / aspect;
+			perspective(1, 2) = 2.f*K(1, 2) / float(imgSize.height) - 1.f;
 			eye = -R.transpose() * T;
 			center = eye + radius * R.row(2).transpose();
 			LookAt(eye, center, R.row(1).transpose());

@@ -39,7 +39,7 @@ int main() {
 	model.Drive(Eigen::Vector3f::Constant(0.1f), Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero());
 	std::shared_ptr<GLUtil::VAO> vao = std::make_shared<GLUtil::VAO>();
 	vao->UploadModel(model);
-	vao->UploadTex(cv::imread("../data/texture/wood.png"));
+	vao->UploadTex(cv::imread("../data/texture/wood.png"), GL_BGR);
 	canvasWidget->canvas->vaos.emplace_back(vao);
 
 	nanogui::mainloop();
