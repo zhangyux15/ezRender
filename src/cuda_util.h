@@ -3,6 +3,7 @@
 #include <device_launch_parameters.h>
 #include <curand.h>
 #include <curand_kernel.h>
+#include <iostream>
 
 
 namespace CudaUtil {
