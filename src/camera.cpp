@@ -64,6 +64,14 @@ void Camera::Parse(const Json::Value& json)
 	if (json.isMember("rectifyAlpha")) 
 		cvRectifyAlpha = json["rectifyAlpha"].asDouble();
 
+	if (json.isMember("validPixROI")) {
+		var = json["validPixROI"];
+		cvValidPixROI.x = var["x"].asFloat();
+		cvValidPixROI.y = var["y"].asFloat();
+		cvValidPixROI.width = var["width"].asFloat();
+		cvValidPixROI.height = var["height"].asFloat();
+	}
+
 	Update();
 }
 
@@ -71,9 +79,10 @@ void Camera::Parse(const Json::Value& json)
 void Camera::Update()
 {
 	cvNewImgSize = cvNewImgSize == cv::Size(0, 0) ? cvImgSize : cvNewImgSize;
+	cvValidPixROI = cvValidPixROI == cv::Rect(0, 0, 0, 0) ? cv::Rect(0, 0, cvNewImgSize.width, cvNewImgSize.height) : cvValidPixROI;
 
 	cvNewK = cv::getOptimalNewCameraMatrix(
-		cvK, cvDistCoeff, cvImgSize, cvRectifyAlpha, cvNewImgSize);
+		cvK, cvDistCoeff, cvImgSize, cvRectifyAlpha, cvNewImgSize, &cvValidPixROI);
 	cv::initUndistortRectifyMap(
 		cvK, cvDistCoeff, cv::Mat(), cvNewK, cvNewImgSize, CV_32FC1, cvRectifyMapX, cvRectifyMapY);
 
@@ -136,6 +145,12 @@ Json::Value Camera::Serialize() const
 	json["newImgSize"].append(Json::Value(cvNewImgSize.height));
 
 	json["rectifyAlpha"]=Json::Value(cvRectifyAlpha);
+
+	json["validPixROI"]["x"] = Json::Value(cvValidPixROI.x);
+	json["validPixROI"]["y"] = Json::Value(cvValidPixROI.y);
+	json["validPixROI"]["width"] = Json::Value(cvValidPixROI.width);
+	json["validPixROI"]["height"] = Json::Value(cvValidPixROI.height);
+
 	return json;
 }
 
