@@ -10,3 +10,4 @@
 !*.props
 !*.vcxproj
 !*.vcxproj.user
+!data/
