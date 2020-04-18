@@ -14,14 +14,17 @@
     <ClCompile Include="..\src\camera.cpp" />
     <ClCompile Include="..\src\canvas_widget.cpp" />
     <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\shader_def.cpp" />
+    <ClCompile Include="..\src\gl_util.cpp" />
+    <ClCompile Include="..\src\model.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\app.h" />
     <ClInclude Include="..\src\camera.h" />
     <ClInclude Include="..\src\canvas_widget.h" />
     <ClInclude Include="..\src\cuda_util.h" />
     <ClInclude Include="..\src\gl_util.h" />
     <ClInclude Include="..\src\math_util.h" />
+    <ClInclude Include="..\src\model.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{441D6BA9-235D-4896-8B18-EFA18ADED8E1}</ProjectGuid>
@@ -79,7 +82,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>

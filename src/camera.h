@@ -12,7 +12,7 @@ struct Camera
 	// origin size
 	cv::Matx33f cvK, cvNewK, cvR;
 	cv::Vec3f cvT;
-	cv::Matx<float, 5, 1> cvDistCoeff = cv::Matx<float,5,1>::zeros();
+	cv::Matx<float, 5, 1> cvDistCoeff = cv::Matx<float, 5, 1>::zeros();
 	cv::Size cvImgSize, cvNewImgSize = cv::Size(0, 0);
 	cv::Rect cvValidPixROI = cv::Rect(0, 0, 0, 0);
 	double cvRectifyAlpha = 0;
@@ -21,7 +21,7 @@ struct Camera
 	// normalized
 	Eigen::Matrix3f K, Ki, R, Rt, RtKi;
 	Eigen::Vector3f T, pos;
-	Eigen::Matrix34f proj;
+	Eigen::Matrix<float, 3, 4> proj;
 
 	Camera() {}
 	Camera(const Json::Value& json) { Parse(json); }
@@ -42,7 +42,7 @@ void SerializeCameras(const std::map<std::string, Camera>& cameras, const std::s
 struct Triangulator
 {
 	std::vector<Eigen::Vector2f> points;
-	std::vector<Eigen::Matrix34f> projs;
+	std::vector<Eigen::Matrix<float, 3, 4>> projs;
 	bool convergent = false;
 	float loss = FLT_MAX;
 	Eigen::Vector3f pos = Eigen::Vector3f::Zero();

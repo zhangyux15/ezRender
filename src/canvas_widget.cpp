@@ -7,21 +7,14 @@ CanvasWidget::Canvas::Canvas(nanogui::Widget* parent, const Eigen::Vector2i& siz
 }
 
 void CanvasWidget::Canvas::drawGL() {
-	for (unsigned int shaderType = 0; shaderType < GLUtil::SHADER_UNKNOWN; shaderType++) {
-		std::shared_ptr<GLUtil::Shader> shader = GLUtil::Shader::Get(GLUtil::ShaderType(shaderType));
-		shader->Use();
-		GLUtil::UniformVar(viewer.perspective).Upload(shader, "u_perspective");
-		GLUtil::UniformVar(viewer.transform).Upload(shader, "u_transform");
-		GLUtil::UniformVar(viewer.eye).Upload(shader, "u_eye");
-	}
-
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	for (auto vao : vaos)
-		vao->Draw();
 
-	fpsGauge.Record();
+	viewer.Upload();
+	for (auto object : objects)
+		object->Draw();
 }
+
 
 bool CanvasWidget::Canvas::mouseDragEvent(const Eigen::Vector2i &p, const Eigen::Vector2i &rel, int button, int modifiers)
 {
@@ -55,11 +48,6 @@ CanvasWidget::CanvasHelper::CanvasHelper(Canvas* _canvas)
 {
 	canvas = _canvas;
 	this->setLayout(new nanogui::GridLayout());
-	new nanogui::Label(this, "FPS:", "sans-bold");
-	fpsBox = new nanogui::FloatBox<float>(this);
-	fpsBox->setEnabled(false);
-	fpsBox->setFixedSize(Eigen::Vector2i(80, 20));
-
 	new nanogui::Label(this, "Width:", "sans-bold");
 	widthBox = new nanogui::IntBox<unsigned int>(this);
 	widthBox->setFixedSize(Eigen::Vector2i(80, 20));
@@ -204,10 +192,10 @@ CanvasWidget::CanvasHelper::CanvasHelper(Canvas* _canvas)
 	freeviewBox->setCallback([this](const float& rate) {stamp = std::chrono::steady_clock::now(); });
 }
 
+
 void CanvasWidget::CanvasHelper::draw(NVGcontext *ctx)
 {
 	if (canvas->visible()) {
-		fpsBox->setValue(canvas->fpsGauge.fps);
 		fovBox->setValue(canvas->viewer.fov);
 		aspectBox->setValue(canvas->viewer.aspect);
 		nearestBox->setValue(canvas->viewer.nearest);
@@ -231,7 +219,7 @@ void CanvasWidget::CanvasHelper::draw(NVGcontext *ctx)
 			if (elapsed > 0.1f) {
 				GLUtil::Viewer& viewer = canvas->viewer;
 				const float theta = 2.f * float(EIGEN_PI) * elapsed * freeviewBox->value();
-				viewer.SetEye(MathUtil::Rodrigues(Eigen::Vector3f(viewer.up * theta)) * (viewer.eye - viewer.center) + viewer.center);
+				viewer.SetEye(Eigen::AngleAxisf(theta, viewer.up).matrix() * (viewer.eye - viewer.center) + viewer.center);
 				stamp = std::chrono::steady_clock::now();
 			}
 		}

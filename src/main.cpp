@@ -1,46 +1,35 @@
-#include "canvas_widget.h"
 #include <opencv2/opencv.hpp>
-
-
-struct ExampleApplication: public nanogui::Screen
-{
-	ExampleApplication() : nanogui::Screen(Eigen::Vector2i(1200, 900), "Application") {
-		using namespace nanogui;
-		nanogui::Window *window = new Window(this, "Canvas Demo");
-		window->setLayout(new GridLayout());
-		performLayout();
-	}
-
-	virtual bool keyboardEvent(int key, int scancode, int action, int modifiers) {
-		if (Screen::keyboardEvent(key, scancode, action, modifiers))
-			return true;
-		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-			setVisible(false);
-			return true;
-		}
-		return false;
-	}
-
-	virtual void draw(NVGcontext *ctx) {
-		/* Draw the user interface */
-		Screen::draw(ctx);
-	}
-};
+#include "canvas_widget.h"
+#include "app.h"
+#include "model.h"
 
 
 int main() {
 	nanogui::init();
-	nanogui::ref<ExampleApplication> app(new ExampleApplication());
+	nanogui::ref<Application> app(new Application(Eigen::Vector2i(1200, 900), "Application"));
 	app->setVisible(true);
-	CanvasWidget* canvasWidget = new CanvasWidget(app, { 900, 900 });
+	CanvasWidget* canvasWidget = new CanvasWidget(app, { 1200, 900 });
 	app->performLayout();
 
-	GLUtil::Model model("../data/model/cube.obj");
+	Model model("../data/model/cube.obj");
 	model.Drive(Eigen::Vector3f::Constant(0.1f), Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero());
-	std::shared_ptr<GLUtil::VAO> vao = std::make_shared<GLUtil::VAO>();
-	vao->UploadModel(model);
-	vao->UploadTex(cv::imread("../data/texture/wood.png"), GL_BGR);
-	canvasWidget->canvas->vaos.emplace_back(vao);
+	model.CalcNormal();
+
+	std::shared_ptr<GLUtil::RenderObject> object = std::make_shared<GLUtil::RenderObject>(GLUtil::SHADER_TEXTURE);
+	//std::shared_ptr<GLUtil::RenderObject> object = std::make_shared<GLUtil::RenderObject>(GLUtil::SHADER_COLOR);
+	
+	object->SetBuffer("face", model.faces);
+	object->SetBuffer("vertex", model.vertices);
+	object->SetBuffer("normal", model.normals);
+
+	//model.SetColor(Eigen::Vector4f(0.8f, 0.5f, 0.6f, 1.f));
+	//object->SetBuffer("color", model.colors);
+	object->SetBuffer("texcoord", model.texcoords);
+	object->SetTexture("tex_uv", cv::imread("../data/texture/water.jpg"));
+	canvasWidget->canvas->objects.emplace_back(object);
+
+	//vao->UploadModel(model);
+	//vao->UploadTex(cv::imread("../data/texture/wood.png"), GL_BGR);
 
 	nanogui::mainloop();
 	nanogui::shutdown();

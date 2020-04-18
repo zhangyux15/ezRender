@@ -8,8 +8,7 @@ struct CanvasWidget : public nanogui::Widget
 	struct Canvas : public nanogui::GLCanvas
 	{
 		GLUtil::Viewer viewer;
-		std::vector<std::shared_ptr<GLUtil::VAO>> vaos;
-		GLUtil::FPSGauge fpsGauge;
+		std::vector<std::shared_ptr<GLUtil::RenderObject>> objects;
 
 		Canvas(nanogui::Widget* parent, const Eigen::Vector2i& size);
 		virtual void drawGL() override;
@@ -23,7 +22,7 @@ struct CanvasWidget : public nanogui::Widget
 		virtual void draw(NVGcontext *ctx) override;
 		Canvas* canvas;
 		nanogui::IntBox<unsigned int> *widthBox, *heightBox;
-		nanogui::FloatBox<float> *fpsBox, *fovBox, *aspectBox, *nearestBox, *farthestBox, *radiusBox,
+		nanogui::FloatBox<float> *fovBox, *aspectBox, *nearestBox, *farthestBox, *radiusBox,
 			*eyexBox, *eyeyBox, *eyezBox, *centerxBox, *centeryBox, *centerzBox, *upxBox, *upyBox, *upzBox, *freeviewBox;
 		nanogui::CheckBox *lookAtCheckbox;
 		std::chrono::time_point<std::chrono::steady_clock> stamp;

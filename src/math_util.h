@@ -5,30 +5,6 @@
 #include <Eigen/Core>
 
 
-namespace Eigen {
-	typedef Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> MatrixXb;
-	typedef Eigen::Matrix<unsigned char, 3, 3> Matrix3b;
-	typedef Eigen::Matrix<unsigned char, 3, Eigen::Dynamic> Matrix3Xb;
-	typedef Eigen::Matrix<unsigned char, 4, Eigen::Dynamic> Matrix4Xb;
-	typedef Eigen::Matrix<unsigned char, 2, 1> Vector2b;
-	typedef Eigen::Matrix<unsigned char, 3, 1> Vector3b;
-	typedef Eigen::Matrix<unsigned char, 4, 1> Vector4b;
-	typedef Eigen::Matrix<unsigned int, Eigen::Dynamic, Eigen::Dynamic> MatrixXu;
-	typedef Eigen::Matrix<unsigned int, 3, 3> Matrix3u;
-	typedef Eigen::Matrix<unsigned int, 3, Eigen::Dynamic> Matrix3Xu;
-	typedef Eigen::Matrix<unsigned int, 4, Eigen::Dynamic> Matrix4Xu;
-	typedef Eigen::Matrix<unsigned int, 2, 1> Vector2u;
-	typedef Eigen::Matrix<unsigned int, 3, 1> Vector3u;
-	typedef Eigen::Matrix<unsigned int, 4, 1> Vector4u;
-	typedef Eigen::Matrix<float, 6, 1> Vector6f;
-	typedef Eigen::Matrix<float, 3, 4> Matrix34f;
-	typedef Eigen::Matrix<float, 3, 2> Matrix32f;
-	typedef Eigen::Matrix<double, 6, 1> Vector6d;
-	typedef Eigen::Matrix<double, 3, 4> Matrix34d;
-	typedef Eigen::Matrix<double, 3, 2> Matrix32d;
-}
-
-
 namespace MathUtil {
 	// Linear Algebra
 	template<typename T>
