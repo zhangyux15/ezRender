@@ -12,6 +12,7 @@
 #include <opencv2/core/opengl.hpp>
 #include <opencv2/core/cuda_stream_accessor.hpp>
 #include <opencv2/core/eigen.hpp>
+#include "model.h"
 
 
 namespace GLUtil
@@ -49,13 +50,7 @@ namespace GLUtil
 	struct UniformBuffer
 	{
 		unsigned int id, index;
-		UniformBuffer(const ShaderType& shaderType, const std::string& name, const int& bytes) {
-			glGenBuffers(1, &id);
-			index = glGetUniformBlockIndex(GetShader(shaderType), name.c_str());
-			glBindBuffer(GL_UNIFORM_BUFFER, id);
-			glBufferData(GL_UNIFORM_BUFFER, bytes, NULL, GL_STATIC_DRAW);
-			glBindBuffer(GL_UNIFORM_BUFFER, 0);
-		}
+		UniformBuffer(const ShaderType& shaderType, const std::string& name, const int& bytes);
 		~UniformBuffer() { glDeleteBuffers(1, &id); }
 		UniformBuffer(const UniformBuffer& _) = delete;
 		UniformBuffer& operator=(const UniformBuffer& _) = delete;
@@ -73,6 +68,7 @@ namespace GLUtil
 
 		RenderObject(const ShaderType& _type);
 		~RenderObject() { glDeleteVertexArrays(1, &id); }
+
 		RenderObject(const RenderObject& _) = delete;
 		RenderObject& operator=(const RenderObject& _) = delete;
 
@@ -85,6 +81,7 @@ namespace GLUtil
 		void SetBuffer(const std::string& name, cv::InputArray arr, cudaStream_t stream = NULL);
 		void SetTexture(const std::string& name, cv::InputArray arr);
 		void SetUniform(const std::string& name, void* data);
+		void SetModel(const Model& model);
 
 		void Draw();
 	};
@@ -113,218 +110,6 @@ namespace GLUtil
 		void DragCenter(const Eigen::Vector2f& pBegin, const Eigen::Vector2f& pEnd);
 		void Upload();
 	};
-
-
-	//struct EBO
-	//{
-	//	unsigned int id, dim, type;
-	//	size_t size = 0, bytes = 0;
-
-	//	EBO(const unsigned int& _type) {
-	//		type = _type;
-	//		switch (type)
-	//		{
-	//		case GL_TRIANGLES:
-	//			dim = 3;
-	//			break;
-	//		case GL_LINES:
-	//			dim = 2;
-	//			break;
-	//		default:
-	//			std::cerr << "Unsupported type" << std::endl;
-	//			std::abort();
-	//			break;
-	//		}
-	//		glGenBuffers(1, &id);
-	//	}
-	//	~EBO() { glDeleteBuffers(1, &id); }
-	//	EBO(const EBO& _) = delete;
-	//	EBO& operator=(const EBO& _) = delete;
-	//	void Bind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id); }
-	//	void Draw() { glDrawElements(type, (int)size, GL_UNSIGNED_INT, NULL); }
-	//	void Upload(const unsigned int* const data, const size_t& _size, const unsigned int& type = GL_DYNAMIC_DRAW)
-	//	{
-	//		size = _size;
-	//		bytes = size * sizeof(unsigned int);
-	//		Bind();
-	//		glBufferData(GL_ELEMENT_ARRAY_BUFFER, bytes, data, type);
-	//	}
-
-	//	void Upload(const Eigen::MatrixXu& data)
-	//	{
-	//		assert((unsigned int)data.rows() == dim);
-	//		Upload(data.data(), data.size());
-	//	}
-
-	//	void Download(unsigned int* data)
-	//	{
-	//		Bind();
-	//		glGetBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, bytes, data);
-	//	}
-
-	//	void Download(Eigen::MatrixXu& data)
-	//	{
-	//		data.resize(dim, size / dim);
-	//		Download(data.data());
-	//	}
-	//};
-
-
-	//struct VBO
-	//{
-	//	unsigned int id, dim, type, status;
-	//	size_t size = 0, bytes = 0;
-
-	//	VBO(const unsigned int& _type, const unsigned int& _status = GL_DYNAMIC_DRAW)
-	//	{
-	//		type = _type;
-	//		status = _status;
-	//		glGenBuffers(1, &id);
-	//	}
-
-	//	~VBO() { glDeleteBuffers(1, &id); }
-	//	VBO(const VBO& _) = delete;
-	//	VBO& operator=(const VBO& _) = delete;
-
-	//	void Bind() { glBindBuffer(GL_ARRAY_BUFFER, id); }
-
-	//	template <typename T>
-	//	void Upload(const T* const data, const unsigned int& _dim, const size_t& _size)
-	//	{
-	//		assert(Type2Enum<T>() == type);
-	//		dim = _dim;
-	//		size = _size;
-	//		bytes = size * sizeof(T);
-	//		Bind();
-	//		glBufferData(GL_ARRAY_BUFFER, bytes, data, status);
-	//	}
-
-	//	template <typename T>
-	//	void Upload(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& data)
-	//	{
-	//		Upload(data.data(), (unsigned int)data.rows(), data.size());
-	//	}
-
-	//	template <typename T>
-	//	void Download(T* data)
-	//	{
-	//		assert(Type2Enum<T>() == type);
-	//		Bind();
-	//		glGetBufferSubData(GL_ARRAY_BUFFER, 0, bytes, data);
-	//	}
-
-	//	template <typename T>
-	//	void Download(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& data)
-	//	{
-	//		data.resize(dim, size / dim);
-	//		Download(data.data());
-	//	}
-	//};
-
-
-	//struct VAO
-	//{
-	//	unsigned int id;
-	//	ShaderType shaderType;
-
-	//	std::shared_ptr<Tex> texuv;
-	//	std::shared_ptr<EBO> ebo;
-	//	std::map<AttribType, std::shared_ptr<VBO>> vbos;
-	//	std::map<std::string, UniformVar> vars;
-
-	//	VAO() {
-	//		glGenVertexArrays(1, &id);
-
-	//		shaderType = SHADER_AUTO;
-	//		ebo = std::make_shared<EBO>(GL_TRIANGLES);
-	//		Bind();
-	//		ebo->Bind();
-
-	//		vars.insert(std::make_pair("u_ambient", UniformVar(.5f)));
-	//		vars.insert(std::make_pair("u_diffuse", UniformVar(.5f)));
-	//		vars.insert(std::make_pair("u_specular", UniformVar(.01f)));
-	//		vars.insert(std::make_pair("u_shininess", UniformVar(20.f)));
-	//		vars.insert(std::make_pair("u_alpha", UniformVar(1.f)));
-	//	}
-	//	VAO(const Model& model) :VAO() { UploadModel(model); }
-	//	~VAO() { glDeleteVertexArrays(1, &id); }
-	//	VAO(const VAO& _) = delete;
-	//	VAO& operator=(const VAO& _) = delete;
-
-	//	void Bind() { glBindVertexArray(id); }
-
-	//	template <typename T>
-	//	void UploadVar(const std::string& name, const T& var) { vars[name] = UniformVar(var); }
-
-	//	template <typename T>
-	//	void UploadVBO(const AttribType& attrib, const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& data)
-	//	{
-	//		Bind();
-	//		auto iter = vbos.find(attrib);
-	//		if (iter == vbos.end())
-	//			iter = vbos.insert(std::make_pair(attrib, std::make_shared<VBO>(Type2Enum<T>()))).first;
-
-	//		iter->second->Upload(data.data(), (unsigned int)data.rows(), data.size());
-	//		glVertexAttribPointer(attrib, iter->second->dim, iter->second->type, GL_FALSE, 0, NULL);			// already bind vbo when call upload()
-	//		glEnableVertexAttribArray(attrib);
-	//	}
-
-	//	void UploadEBO(const Eigen::MatrixXu& data)
-	//	{
-	//		Bind();
-	//		ebo->Upload(data);
-	//	}
-
-	//	void UploadTex(const cv::Mat& img, const unsigned int& format)
-	//	{
-	//		cv::Size _size(img.cols, img.rows);
-	//		if (!texuv || texuv->size != _size)
-	//			texuv = std::make_shared<Tex>(_size);
-	//		texuv->Upload(img, format);
-	//	}
-
-	//	void UploadTex(const cv::cuda::GpuMat& img, cudaStream_t stream = NULL)
-	//	{
-	//		cv::Size _size(img.cols, img.rows);
-	//		if (!texuv || texuv->size != _size)
-	//			texuv = std::make_shared<Tex>(_size);
-	//		texuv->Upload(img, stream);
-	//	}
-
-	//	void UploadModel(const Model& model) {
-	//		UploadVBO<float>(ATTRIB_VERTEX, model.vertices);
-	//		UploadVBO<float>(ATTRIB_NORMAL, model.normals);
-	//		UploadEBO(model.faces);
-	//		if (model.colors.size() > 0)
-	//			UploadVBO<float>(ATTRIB_COLOR, model.colors);
-	//		if (model.texcoords.size() > 0)
-	//			UploadVBO<float>(ATTRIB_TEXCOORD, model.texcoords);
-	//	}
-
-	//	void Draw()
-	//	{
-	//		Bind();
-	//		ShaderType _shaderType = shaderType != SHADER_AUTO ? shaderType
-	//			: vbos.find(ATTRIB_TEXCOORD) != vbos.end() ? SHADER_TEXTURE
-	//			: vbos.find(ATTRIB_COLOR) != vbos.end() ? SHADER_COLOR
-	//			: SHADER_UNKNOWN;
-	//		std::shared_ptr<Shader> shader = Shader::Get(_shaderType);
-
-	//		// uniform var
-	//		for (const auto& var : vars)
-	//			var.second.Upload(shader, var.first);
-
-	//		// uniform tex
-	//		if (texuv) {
-	//			glActiveTexture(GL_TEXTURE0 + TEXINDEX_UV);
-	//			UniformVar(int(TEXINDEX_UV)).Upload(shader, TEX_UNIFORM[TEXINDEX_UV]);
-	//			texuv->Bind();
-	//		}
-
-	//		ebo->Draw();
-	//	}
-	//};
-
 }
 
 

@@ -41,19 +41,10 @@ void SerializeCameras(const std::map<std::string, Camera>& cameras, const std::s
 
 struct Triangulator
 {
-	std::vector<Eigen::Vector2f> points;
-	std::vector<Eigen::Matrix<float, 3, 4>> projs;
-	bool convergent = false;
-	float loss = FLT_MAX;
-	Eigen::Vector3f pos = Eigen::Vector3f::Zero();
-
-	void Clear() {
-		convergent = false;
-		loss = FLT_MAX;
-		pos = Eigen::Vector3f::Zero();
-		points.clear();
-		projs.clear();
-	}
-
+	Eigen::Matrix3Xf points;
+	Eigen::Matrix3Xf projs;
+	bool convergent;
+	float loss;
+	Eigen::Vector3f pos;
 	void Solve(const int& maxIterTime = 20, const float& updateTolerance = 1e-4f, const float& regularTerm = 1e-4f);
 };

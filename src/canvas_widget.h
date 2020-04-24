@@ -11,6 +11,7 @@ struct CanvasWidget : public nanogui::Widget
 		std::vector<std::shared_ptr<GLUtil::RenderObject>> objects;
 
 		Canvas(nanogui::Widget* parent, const Eigen::Vector2i& size);
+		cv::Mat GetImage();
 		virtual void drawGL() override;
 		virtual bool mouseDragEvent(const Eigen::Vector2i &p, const Eigen::Vector2i &rel, int button, int modifiers) override;
 		virtual bool scrollEvent(const Eigen::Vector2i &p, const Eigen::Vector2f &rel) override;
@@ -30,5 +31,4 @@ struct CanvasWidget : public nanogui::Widget
 
 	CanvasWidget(nanogui::Widget* parent, const Eigen::Vector2i& size);
 	virtual bool mouseButtonEvent(const Eigen::Vector2i &p, int button, bool down, int modifiers) override;
-	cv::Mat GetImage();
 };

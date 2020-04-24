@@ -7,7 +7,7 @@ namespace GLUtil
 	void UniformVariable::Set(const GLenum& _type)
 	{
 		type = _type;
-		const int size = [type = type] {
+		const size_t size = [type = type] {
 			switch (type)
 			{
 			case GL_FLOAT: return sizeof(float);
@@ -64,6 +64,13 @@ namespace GLUtil
 		}
 	}
 
+	UniformBuffer::UniformBuffer(const ShaderType& shaderType, const std::string& name, const int& bytes) {
+		glGenBuffers(1, &id);
+		index = glGetUniformBlockIndex(GetShader(shaderType), name.c_str());
+		glBindBuffer(GL_UNIFORM_BUFFER, id);
+		glBufferData(GL_UNIFORM_BUFFER, bytes, NULL, GL_STATIC_DRAW);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	}
 
 	RenderObject::RenderObject(const ShaderType& _type) {
 		type = _type;
@@ -96,7 +103,6 @@ namespace GLUtil
 			UniformVariable uniform(uniformType);
 			uniform.Download(shaderId, glGetUniformLocation(shaderId, name));
 			uniforms.insert(std::make_pair(std::string(name), uniform));
-			std::cout << *(float*)(uniform.data.data()) << std::endl;
 			if(uniformType == GL_SAMPLER_2D)
 				texs.insert(std::make_pair(std::string(name), cv::ogl::Texture2D()));
 		}
@@ -151,6 +157,15 @@ namespace GLUtil
 		auto iter = uniforms.find(name);
 		if (iter != uniforms.end())
 			memcpy(iter->second.data.data(), data, iter->second.data.size());
+	}
+
+	void RenderObject::SetModel(const Model& model)
+	{
+		SetBuffer("face", model.faces);
+		SetBuffer("vertex", model.vertices);
+		SetBuffer("normal", model.normals);
+		SetBuffer("color", model.colors);
+		SetBuffer("texcoord", model.texcoords);
 	}
 
 	void RenderObject::Draw()

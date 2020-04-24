@@ -3,6 +3,7 @@
 #include <fstream>
 #include <type_traits>
 #include <Eigen/Core>
+#include <opencv2/core.hpp>
 
 
 namespace MathUtil {
@@ -97,6 +98,34 @@ namespace MathUtil {
 			return Point2LineDist(pA, pB, rayA);
 		else
 			return std::abs((pA - pB).dot((rayA.cross(rayB)).normalized()));
+	}
+
+	template <typename T>
+	Eigen::Matrix<T, -1, -1> LoadMat(const std::string& filename) {
+		std::ifstream ifs(filename);
+		if (!ifs.is_open()) {
+			std::cerr << "can not open fie: " << filename;
+			std::abort();
+		}
+		int rows, cols;
+		ifs >> rows >> cols;
+		Eigen::Matrix<T, -1, -1> mat(rows, cols);
+		for (int i = 0; i < rows; i++)
+			for (int j = 0; j < cols; j++)
+				ifs >> mat(i, j);
+		return mat;
+	}
+
+	template <typename T>
+	inline void SaveMat(const Eigen::Matrix<T, -1, -1>& mat, const std::string& filename) {
+		std::ofstream ofs(filename);
+		ofs << mat.rows() << " " << mat.cols() << std::endl;
+		ofs << mat << std::endl;
+		ofs.close();
+	}
+
+	inline cv::Point Vec2Point(const Eigen::Vector2f& vec, const cv::Size& size) {
+		return cv::Point(int(std::round(vec.x() * size.width)), int(std::round(vec.y() * size.height)));
 	}
 }
 

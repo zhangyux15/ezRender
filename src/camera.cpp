@@ -208,28 +208,34 @@ void SerializeCameras(const std::map<std::string, Camera>& cameras, const std::s
 
 
 void Triangulator::Solve(const int& maxIterTime, const float& updateTolerance, const float& regularTerm) {
-	if (projs.size() < 2) 
+	convergent = false;
+	loss = FLT_MAX;
+	pos.setZero();
+
+	if ((points.row(2).array() > FLT_EPSILON).count() < 2) 
 		return;
+
 	for (int iterTime = 0; iterTime < maxIterTime && !convergent; iterTime++) {
-		Eigen::MatrixXf jacobi = Eigen::MatrixXf::Zero(2 * projs.size(), 3);
-		Eigen::VectorXf residual(2 * projs.size());
-		for (int i = 0; i < projs.size(); i++) {
-			const Eigen::Vector3f xyz = projs[i] * pos.homogeneous();
-			Eigen::Matrix<float, 2, 3> tmp;
-			tmp << 1.0f / xyz.z(), 0.0f, -xyz.x() / (xyz.z()*xyz.z()),
-				0.0f, 1.0f / xyz.z(), -xyz.y() / (xyz.z()*xyz.z());
-			jacobi.block<2, 3>(2 * i, 0) = tmp * projs[i].block<3, 3>(0, 0);
-			residual.segment<2>(2 * i) = xyz.hnormalized() - points[i];
+		Eigen::Matrix3f ATA = regularTerm * Eigen::Matrix3f::Identity();
+		Eigen::Vector3f ATb = Eigen::Vector3f::Zero();
+		for (int view = 0; view < points.cols(); view++) {
+			if (points(2, view) > FLT_EPSILON) {
+				auto proj = projs.middleCols(4 * view, 4);
+				const Eigen::Vector3f xyz = proj * pos.homogeneous();
+				Eigen::Matrix<float, 2, 3> jacobi;
+				jacobi << 1.0f / xyz.z(), 0.0f, -xyz.x() / (xyz.z()*xyz.z()),
+					0.0f, 1.0f / xyz.z(), -xyz.y() / (xyz.z()*xyz.z());
+				jacobi = jacobi * proj.leftCols(3);
+				const float w = points(2, view);
+				ATA += w * jacobi.transpose() * jacobi;
+				ATb += w * jacobi.transpose()*(points.col(view).head(2) - xyz.hnormalized());
+			}
 		}
-
-		loss = residual.cwiseAbs().sum() / residual.rows();
-		Eigen::MatrixXf hessian = jacobi.transpose()*jacobi + regularTerm * Eigen::MatrixXf::Identity(jacobi.cols(), jacobi.cols());
-		Eigen::VectorXf gradient = jacobi.transpose()*residual;
-
-		const Eigen::VectorXf deltaPos = hessian.ldlt().solve(-gradient);
-		if (deltaPos.norm() < updateTolerance)
+		const Eigen::Vector3f delta = ATA.ldlt().solve(ATb);
+		loss = delta.norm();
+		if (delta.norm() < updateTolerance)
 			convergent = true;
 		else
-			pos += deltaPos;
+			pos += delta;
 	}
 }
